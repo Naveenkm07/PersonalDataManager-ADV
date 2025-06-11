@@ -1,0 +1,1212 @@
+  <label>Room Number</label>
+  <input type="number" id="roomNo" placeholder="Room No" min="1" />
+  <label>Allotment Number</label>
+  <input type="text" id="allotmentNo" placeholder="Allotment No" />
+  <label>Photo</label>
+  <input type="file" id="studentPhoto" accept="image/*" />
+  
+  <label>Fee Type</label>
+  <select id="feeType">
+    <option value="monthly">Monthly Fee</option>
+    <option value="semester">Semester Fee</option>
+    <option value="yearly">Yearly Fee</option>
+  </select>
+  
+  <label>Amount (₹)</label>
+  <input type="number" id="paymentAmount" placeholder="Amount paid" min="0" />
+  
+  <div id="paymentScanner" style="display:none; margin: 20px 0; text-align: center;">
+    <div style="background: #000; padding: 20px; border-radius: 10px; max-width: 300px; margin: 0 auto;">
+      <div id="scannerAnimation" style="height: 200px; background: #111; position: relative; overflow: hidden;">
+        <div id="scanLine" style="position: absolute; width: 100%; height: 2px; background: #0f0; top: 0; animation: scan 2s linear infinite;"></div>
+        <div id="qrCode" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; background: #fff; display: flex; flex-wrap: wrap;">
+          <!-- QR code pattern -->
+          <div style="width: 33.33%; height: 33.33%; background: #000;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #fff;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #000;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #fff;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #000;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #fff;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #000;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #fff;"></div>
+          <div style="width: 33.33%; height: 33.33%; background: #000;"></div>
+        </div>
+      </div>
+      <div id="scanStatus" style="color: #fff; margin-top: 10px;">Scanning for payment...</div>
+    </div>
+  </div>
+
+  <button onclick="startPaymentScan()">Scan QR to Pay</button>
+  <button onclick="addStudent()" id="addStudentBtn" style="display:none;">Confirm Payment & Add Student</button>
+
+  <style>
+    @keyframes scan {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+    #paymentScanner {
+      transition: all 0.3s ease;
+    }
+    .processing {
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    .nav-bar {
+      background: rgba(0,0,0,0.8);
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+    }
+
+    .action-button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .action-button:hover {
+      background: #0056b3;
+      transform: translateY(-2px);
+    }
+
+    .action-button.export {
+      background: #28a745;
+    }
+
+    .action-button.export:hover {
+      background: #218838;
+    }
+
+    .action-button.receipt {
+      background: #17a2b8;
+    }
+
+    .action-button.receipt:hover {
+      background: #138496;
+    }
+
+    .action-button.logout {
+      background: #dc3545;
+    }
+
+    .action-button.logout:hover {
+      background: #c82333;
+    }
+
+    .action-button i {
+      font-size: 1.2em;
+    }
+
+    /* Add these new styles */
+    .payment-section {
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .payment-methods {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .payment-method {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      border: 2px solid #eee;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .payment-method:hover {
+      border-color: #007bff;
+      transform: translateY(-2px);
+    }
+
+    .payment-method.selected {
+      border-color: #007bff;
+      background: #f8f9ff;
+    }
+
+    .payment-method i {
+      font-size: 2em;
+      margin-bottom: 10px;
+      color: #007bff;
+    }
+
+    .payment-details {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9ff;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .payment-details.active {
+      display: block;
+    }
+
+    .payment-input {
+      margin-bottom: 15px;
+    }
+
+    .payment-input label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .payment-input input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .payment-summary {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    /* Enhanced UI Styles */
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #1e40af;
+      --success-color: #059669;
+      --danger-color: #dc2626;
+      --background-color: #f3f4f6;
+      --card-background: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #4b5563;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--background-color);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .payment-section {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: var(--card-background);
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .payment-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .payment-header h2 {
+      font-size: 2rem;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .payment-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .payment-methods {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .payment-method {
+      background: var(--card-background);
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      border: 2px solid #e5e7eb;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .payment-method::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--primary-color);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .payment-method:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .payment-method:hover::before {
+      transform: scaleX(1);
+    }
+
+    .payment-method.selected {
+      border-color: var(--primary-color);
+      background: #f8fafc;
+    }
+
+    .payment-method i {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .payment-method h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .payment-method p {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .payment-details {
+      background: #f8fafc;
+      padding: 2rem;
+      border-radius: 0.75rem;
+      margin-top: 2rem;
+      display: none;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .payment-details.active {
+      display: block;
+    }
+
+    .payment-input {
+      margin-bottom: 1.5rem;
+    }
+
+    .payment-input label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .payment-input input,
+    .payment-input select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .payment-input input:focus,
+    .payment-input select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .action-button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .action-button:hover {
+      background: var(--secondary-color);
+      transform: translateY(-2px);
+    }
+
+    .action-button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .payment-summary {
+      background: #f8fafc;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      margin-top: 2rem;
+      border: 2px solid #e5e7eb;
+    }
+
+    .payment-summary h3 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+
+    .payment-summary p {
+      margin: 0.5rem 0;
+      color: var(--text-secondary);
+    }
+
+    .payment-success {
+      text-align: center;
+      padding: 2rem;
+      background: #ecfdf5;
+      border-radius: 0.75rem;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .payment-success.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .success-icon {
+      color: var(--success-color);
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .payment-section {
+        margin: 1rem;
+        padding: 1rem;
+      }
+
+      .payment-methods {
+        grid-template-columns: 1fr;
+      }
+
+      .payment-details {
+        padding: 1rem;
+      }
+    }
+
+    /* Dashboard Styles */
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .dashboard-title {
+      font-size: 1.875rem;
+      color: #2563eb;
+      margin: 0;
+    }
+
+    .dashboard-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .form-section {
+      background: #f8fafc;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+    }
+
+    .form-section h3 {
+      color: #2563eb;
+      margin-bottom: 1.5rem;
+      font-size: 1.25rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: #2563eb;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .photo-upload {
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+
+    .photo-upload input[type="file"] {
+      display: none;
+    }
+
+    .photo-upload label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #f3f4f6;
+      border: 2px dashed #d1d5db;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .photo-upload label:hover {
+      background: #e5e7eb;
+      border-color: #2563eb;
+    }
+
+    .photo-upload i {
+      color: #2563eb;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #1f2937;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+
+    .student-records {
+      margin-top: 2rem;
+    }
+
+    .student-records h3 {
+      color: #2563eb;
+      margin-bottom: 1rem;
+    }
+
+    .student-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .student-card {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .student-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .student-photo {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #2563eb;
+    }
+
+    .student-info {
+      flex: 1;
+    }
+
+    .student-info h4 {
+      margin: 0 0 0.5rem 0;
+      color: #1f2937;
+    }
+
+    .student-info p {
+      margin: 0.25rem 0;
+      color: #4b5563;
+      font-size: 0.875rem;
+    }
+
+    .student-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .analytics-section {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+    }
+
+    .analytics-section h3 {
+      color: #2563eb;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard-actions {
+        flex-direction: column;
+      }
+
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <!-- Add Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- Update the app section structure -->
+  <div id="appSection" style="display:none">
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <h2 class="dashboard-title">Hostel Management Dashboard</h2>
+        <div class="dashboard-actions">
+          <button class="btn btn-secondary" onclick="showPasswordChange()">
+            <i class="fas fa-key"></i> Change Password
+          </button>
+          <button class="btn btn-danger" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="form-section">
+          <h3>Add New Student</h3>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="studentName" placeholder="Enter student's full name" />
+          </div>
+          <div class="form-group">
+            <label>USN</label>
+            <input type="text" id="studentUSN" placeholder="Enter University Seat Number" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="studentEmail" placeholder="Enter email address" />
+          </div>
+          <div class="form-group">
+            <label>Room Number</label>
+            <input type="number" id="roomNo" placeholder="Enter room number" min="1" />
+          </div>
+          <div class="form-group">
+            <label>Room Capacity</label>
+            <input type="number" id="roomCap" placeholder="Enter room capacity" min="1" />
+          </div>
+          <div class="form-group">
+            <label>Allotment Number</label>
+            <input type="text" id="allotmentNo" placeholder="Enter allotment number" />
+          </div>
+          <div class="form-group">
+            <div class="photo-upload">
+              <input type="file" id="studentPhoto" accept="image/*" />
+              <label for="studentPhoto">
+                <i class="fas fa-camera"></i>
+                <span>Upload Photo</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Payment Amount (₹)</label>
+            <input type="number" id="paymentAmount" placeholder="Enter payment amount" min="0" />
+          </div>
+          <button class="btn btn-primary" onclick="addStudent()">
+            <i class="fas fa-user-plus"></i> Add Student
+          </button>
+        </div>
+
+        <div class="form-section">
+          <h3>Quick Actions</h3>
+          <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="exportToExcel()">
+              <i class="fas fa-file-excel"></i> Export to Excel
+            </button>
+            <button class="btn btn-secondary" onclick="generatePDF()">
+              <i class="fas fa-file-pdf"></i> Generate Receipt
+            </button>
+          </div>
+
+          <div id="changePasswordDiv" style="display:none; margin-top: 1.5rem;">
+            <h3>Change Password</h3>
+            <div class="form-group">
+              <label>Old Password</label>
+              <input type="password" id="oldPass" placeholder="Enter old password" />
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" id="newPass" placeholder="Enter new password" />
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+            <p id="passChangeMsg" style="color:green; margin-top: 1rem;"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="student-records">
+        <h3>Student Records</h3>
+        <div id="studentList" class="student-list"></div>
+      </div>
+
+      <div class="analytics-section">
+        <h3>Room Occupancy Analytics</h3>
+        <canvas id="roomChart" height="150"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add this new section after your existing app section -->
+  <div id="paymentSection" class="payment-section" style="display:none;">
+    <div class="payment-header">
+      <h2>Payment Portal</h2>
+      <p>Select your preferred payment method</p>
+    </div>
+    
+    <div class="payment-methods">
+      <div class="payment-method" onclick="selectPaymentMethod('upi')">
+        <i class="fas fa-mobile-alt"></i>
+        <h3>UPI Payment</h3>
+        <p>Quick and easy payment using any UPI app</p>
+      </div>
+      
+      <div class="payment-method" onclick="selectPaymentMethod('card')">
+        <i class="fas fa-credit-card"></i>
+        <h3>Card Payment</h3>
+        <p>Secure payment using credit or debit card</p>
+      </div>
+      
+      <div class="payment-method" onclick="selectPaymentMethod('netbanking')">
+        <i class="fas fa-university"></i>
+        <h3>Net Banking</h3>
+        <p>Direct transfer from your bank account</p>
+      </div>
+    </div>
+
+    <div id="upiDetails" class="payment-details">
+      <h3>UPI Payment</h3>
+      <div class="payment-input">
+        <label>UPI ID</label>
+        <input type="text" id="upiId" placeholder="example@upi">
+      </div>
+      <div class="payment-input">
+        <label>Amount (₹)</label>
+        <input type="number" id="upiAmount" placeholder="Enter amount">
+      </div>
+      <button class="action-button" onclick="processUPIPayment()">
+        <i class="fas fa-check"></i> Pay Now
+      </button>
+    </div>
+
+    <div id="cardDetails" class="payment-details">
+      <h3>Card Payment</h3>
+      <div class="payment-input">
+        <label>Card Number</label>
+        <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="payment-input">
+          <label>Expiry Date</label>
+          <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5">
+        </div>
+        <div class="payment-input">
+          <label>CVV</label>
+          <input type="text" id="cardCvv" placeholder="123" maxlength="3">
+        </div>
+      </div>
+      <button class="action-button" onclick="processCardPayment()">
+        <i class="fas fa-check"></i> Pay Now
+      </button>
+    </div>
+
+    <div id="netbankingDetails" class="payment-details">
+      <h3>Net Banking</h3>
+      <div class="payment-input">
+        <label>Select Bank</label>
+        <select id="bankSelect">
+          <option value="">Select your bank</option>
+          <option value="sbi">State Bank of India</option>
+          <option value="hdfc">HDFC Bank</option>
+          <option value="icici">ICICI Bank</option>
+          <option value="axis">Axis Bank</option>
+        </select>
+      </div>
+      <div class="payment-input">
+        <label>Amount (₹)</label>
+        <input type="number" id="netbankingAmount" placeholder="Enter amount">
+      </div>
+      <button class="action-button" onclick="processNetbankingPayment()">
+        <i class="fas fa-check"></i> Pay Now
+      </button>
+    </div>
+
+    <div class="payment-summary">
+      <h3>Payment Summary</h3>
+      <div id="paymentSummaryContent"></div>
+    </div>
+
+    <div id="paymentSuccess" class="payment-success">
+      <i class="fas fa-check-circle success-icon"></i>
+      <h3>Payment Successful!</h3>
+      <div id="successDetails"></div>
+    </div>
+  </div>
+
+  <script>
+    // Update the exportToExcel function
+    async function exportToExcel() {
+      const button = document.querySelector('.action-button.export');
+      const originalText = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+      button.disabled = true;
+
+      try {
+        const snapshot = await db.ref('students').once('value');
+        const data = snapshot.val() || {};
+        const sheetData = [['Name', 'USN', 'Email', 'Room No', 'Allotment No', 'Payment Amount', 'Fee Type', 'Payment Status', 'Transaction ID', 'Date']];
+        
+        for (const k in data) {
+          const s = data[k];
+          sheetData.push([
+            s.name, s.usn, s.email, s.room, s.allotmentNo, 
+            s.payment.amount, s.payment.type, s.payment.status,
+            s.payment.transactionId, new Date(s.payment.date).toLocaleDateString()
+          ]);
+        }
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, "Students");
+        XLSX.writeFile(wb, "hostel_students.xlsx");
+        
+        alert('Excel file exported successfully!');
+      } catch(e) {
+        alert('Error exporting to Excel: ' + e.message);
+      } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+      }
+    }
+
+    // Update the generatePDF function
+    async function generatePDF() {
+      const button = document.querySelector('.action-button.receipt');
+      const originalText = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+      button.disabled = true;
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const snapshot = await db.ref('students').orderByChild('timestamp').limitToLast(1).once('value');
+        
+        if (!snapshot.exists()) {
+          alert('No student data found!');
+          return;
+        }
+
+        let lastStudent = null;
+        snapshot.forEach(snap => { lastStudent = snap.val(); });
+
+        if(!lastStudent) {
+          alert('No student data found!');
+          return;
+        }
+
+        const doc = new jsPDF();
+
+        // Add header
+        doc.setFontSize(22);
+        doc.text("Hostel Fee Receipt", 105, 20, null, null, "center");
+
+        // Add content
+        doc.setFontSize(14);
+        doc.text(`Name: ${lastStudent.name}`, 20, 40);
+        doc.text(`USN: ${lastStudent.usn}`, 20, 50);
+        doc.text(`Room No: ${lastStudent.room}`, 20, 60);
+        doc.text(`Allotment No: ${lastStudent.allotmentNo}`, 20, 70);
+        doc.text(`Amount Paid: ₹${lastStudent.payment.amount.toFixed(2)}`, 20, 80);
+        doc.text(`Fee Type: ${lastStudent.payment.type}`, 20, 90);
+        doc.text(`Transaction ID: ${lastStudent.payment.transactionId}`, 20, 100);
+        doc.text(`Date: ${new Date(lastStudent.payment.date).toLocaleDateString()}`, 20, 110);
+
+        doc.setFontSize(12);
+        doc.text("Thank you for your payment.", 20, 130);
+
+        doc.save(`FeeReceipt_${lastStudent.usn}.pdf`);
+        alert('PDF receipt generated successfully!');
+      } catch(e) {
+        alert('Error generating PDF: ' + e.message);
+      } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+      }
+    }
+
+    // Add these new functions
+    function showPaymentSection() {
+      document.getElementById('paymentSection').style.display = 'block';
+      document.getElementById('appSection').style.display = 'none';
+    }
+
+    function selectPaymentMethod(method) {
+      // Hide all payment details
+      document.querySelectorAll('.payment-details').forEach(el => {
+        el.classList.remove('active');
+      });
+      
+      // Remove selected class from all methods
+      document.querySelectorAll('.payment-method').forEach(el => {
+        el.classList.remove('selected');
+      });
+      
+      // Show selected method details
+      document.getElementById(method + 'Details').classList.add('active');
+      
+      // Add selected class to clicked method
+      event.currentTarget.classList.add('selected');
+    }
+
+    function formatCardNumber(input) {
+      let value = input.value.replace(/\D/g, '');
+      let formattedValue = '';
+      for(let i = 0; i < value.length; i++) {
+        if(i > 0 && i % 4 === 0) {
+          formattedValue += ' ';
+        }
+        formattedValue += value[i];
+      }
+      input.value = formattedValue;
+    }
+
+    function formatExpiryDate(input) {
+      let value = input.value.replace(/\D/g, '');
+      if(value.length >= 2) {
+        value = value.substring(0,2) + '/' + value.substring(2);
+      }
+      input.value = value;
+    }
+
+    async function processUPIPayment() {
+      const upiId = document.getElementById('upiId').value;
+      const amount = document.getElementById('upiAmount').value;
+      
+      if(!upiId || !amount) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      const button = event.target;
+      const originalText = button.innerHTML;
+      button.innerHTML = '<div class="loading-spinner"></div> Processing...';
+      button.disabled = true;
+
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const transactionId = 'TXN' + Date.now();
+        
+        document.getElementById('successDetails').innerHTML = `
+          <p>Amount: ₹${amount}</p>
+          <p>Transaction ID: ${transactionId}</p>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+        `;
+        
+        document.getElementById('paymentSuccess').classList.add('active');
+        document.getElementById('paymentSummaryContent').innerHTML = `
+          <p>Payment Successful!</p>
+          <p>Amount: ₹${amount}</p>
+          <p>Transaction ID: ${transactionId}</p>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+        `;
+      } catch(e) {
+        alert('Payment failed: ' + e.message);
+      } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+      }
+    }
+
+    async function processCardPayment() {
+      const cardNumber = document.getElementById('cardNumber').value;
+      const expiry = document.getElementById('cardExpiry').value;
+      const cvv = document.getElementById('cardCvv').value;
+      
+      if(!cardNumber || !expiry || !cvv) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      const button = event.target;
+      const originalText = button.innerHTML;
+      button.innerHTML = '<div class="loading-spinner"></div> Processing...';
+      button.disabled = true;
+
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const transactionId = 'TXN' + Date.now();
+        
+        document.getElementById('successDetails').innerHTML = `
+          <p>Card: **** **** **** ${cardNumber.slice(-4)}</p>
+          <p>Transaction ID: ${transactionId}</p>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+        `;
+        
+        document.getElementById('paymentSuccess').classList.add('active');
+        document.getElementById('paymentSummaryContent').innerHTML = `
+          <p>Payment Successful!</p>
+          <p>Card: **** **** **** ${cardNumber.slice(-4)}</p>
+          <p>Transaction ID: ${transactionId}</p>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+        `;
+      } catch(e) {
+        alert('Payment failed: ' + e.message);
+      } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+      }
+    }
+
+    async function processNetbankingPayment() {
+      const bank = document.getElementById('bankSelect').value;
+      const amount = document.getElementById('netbankingAmount').value;
+      
+      if(!bank || !amount) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      const button = event.target;
+      const originalText = button.innerHTML;
+      button.innerHTML = '<div class="loading-spinner"></div> Processing...';
+      button.disabled = true;
+
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const transactionId = 'TXN' + Date.now();
+        
+        document.getElementById('successDetails').innerHTML = `
+          <p>Bank: ${bank}</p>
+          <p>Amount: ₹${amount}</p>
+          <p>Transaction ID: ${transactionId}</p>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+        `;
+        
+        document.getElementById('paymentSuccess').classList.add('active');
+        document.getElementById('paymentSummaryContent').innerHTML = `
+          <p>Payment Successful!</p>
+          <p>Bank: ${bank}</p>
+          <p>Amount: ₹${amount}</p>
+          <p>Transaction ID: ${transactionId}</p>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+        `;
+      } catch(e) {
+        alert('Payment failed: ' + e.message);
+      } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+      }
+    }
+
+    // Add event listeners for input formatting
+    document.getElementById('cardNumber').addEventListener('input', function() {
+      formatCardNumber(this);
+    });
+
+    document.getElementById('cardExpiry').addEventListener('input', function() {
+      formatExpiryDate(this);
+    });
+
+    // Update the displayStudents function
+    function displayStudents(data) {
+      studentList.innerHTML = '';
+      for (const key in data) {
+        const s = data[key];
+        const div = document.createElement('div');
+        div.className = 'student-card';
+
+        const img = document.createElement('img');
+        img.className = 'student-photo';
+        img.src = s.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        img.alt = s.name;
+        img.onerror = function() {
+          this.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        };
+
+        const info = document.createElement('div');
+        info.className = 'student-info';
+        info.innerHTML = `
+          <h4>${s.name}</h4>
+          <p><strong>USN:</strong> ${s.usn}</p>
+          <p><strong>Email:</strong> ${s.email}</p>
+          <p><strong>Room:</strong> ${s.room} (Capacity: ${s.capacity})</p>
+          <p><strong>Allotment No:</strong> ${s.allotmentNo}</p>
+          <p><strong>Payment:</strong> ₹${s.payment.toFixed(2)}</p>
+        `;
+
+        const actions = document.createElement('div');
+        actions.className = 'student-actions';
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn btn-secondary';
+        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+        editBtn.onclick = () => loadStudentToForm(s);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-danger';
+        delBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+        delBtn.onclick = () => deleteStudent(s.usn);
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        div.appendChild(img);
+        div.appendChild(info);
+        div.appendChild(actions);
+
+        studentList.appendChild(div);
+      }
+    }
+  </script> 
