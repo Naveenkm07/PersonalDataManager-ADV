@@ -112,7 +112,7 @@ A modern, advanced personal data management system for securely storing, organiz
 
 ## 📬 Contact
 - **Author:** Naveen Kumar KM
-- **Email:** naveenkumar.km.official@gmail.com
+- **Email:** kmnaveenkm01@gmail.com
 - **GitHub:** [Naveenkm07](https://github.com/Naveenkm07)
 
 ---
