@@ -24,7 +24,7 @@ A modern, advanced personal data management system for securely storing, organiz
 
 | Dashboard | Secure Notes | Analytics |
 |-----------|-------------|-----------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Secure Notes](docs/screenshots/secure-notes.png) | ![Analytics](docs/screenshots/analytics.png) |
+| ![Dashboard](screenshort/Screenshot%202025-07-14%20102236.png) | ![Secure Notes](screenshort/Screenshot%202025-07-14%20102318.png) | ![Analytics](screenshort/Screenshot%202025-07-14%20102332.png) |
 
 ---
 
