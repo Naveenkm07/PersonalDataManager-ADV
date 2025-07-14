@@ -28,5 +28,5 @@ call npm start
 if %errorlevel% neq 0 (
     echo Failed to start the server. Please check the error messages above.
     pause
-    exit /b 1
+    exit 
 ) 

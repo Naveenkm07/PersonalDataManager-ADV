@@ -1,80 +1,166 @@
 import React, { useState } from 'react';
-import { 
-  TextField, 
-  Button, 
-  Box, 
-  Typography, 
-  Container, 
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Link,
+  Alert,
+  InputAdornment,
+  IconButton,
+  useTheme,
+  useMediaQuery,
   Paper,
-  Avatar 
+  Container
 } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useNavigate } from 'react-router-dom';
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
+  Login as LoginIcon
+} from '@mui/icons-material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { login } = useAuth();
   const { showNotification } = useNotification();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    
+    if (!validateForm()) {
+      return;
+    }
 
+    setIsLoading(true);
     try {
-      if (email === 'nhce@gmail.com' && password === 'CSECSE') {
-        // Store auth state
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('user', JSON.stringify({ email }));
-        
-        showNotification('Login successful! Redirecting...', 'success');
-        
-        // Add slight delay for better UX
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
+      const success = await login(formData.email, formData.password);
+      if (success) {
+        showNotification('Login successful!', 'success');
+        navigate('/dashboard');
       } else {
-        showNotification('Invalid email or password', 'error');
+        showNotification('Invalid credentials', 'error');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      showNotification('An error occurred during login', 'error');
+      showNotification('Login failed. Please try again.', 'error');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
+    <Container 
+      maxWidth="sm" 
+      sx={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 4
+      }}
+    >
+      <Paper 
+        elevation={8}
         sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          width: '100%',
+          maxWidth: 400,
+          borderRadius: 3,
+          overflow: 'hidden'
         }}
       >
-        <Paper
-          elevation={3}
+        {/* Header */}
+        <Box
           sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
+            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+            color: 'white',
+            p: 4,
+            textAlign: 'center'
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-            <LockOutlinedIcon />
-          </Avatar>
-          
-          <Typography component="h1" variant="h5" gutterBottom>
-            Sign in to NHCE
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom
+            sx={{ fontWeight: 600 }}
+          >
+            NAVEEN
           </Typography>
-          
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+          <Typography variant="body1" sx={{ opacity: 0.9 }}>
+            Digital Life Management System
+          </Typography>
+        </Box>
+
+        {/* Login Form */}
+        <CardContent sx={{ p: 4 }}>
+          <Typography 
+            variant="h6" 
+            component="h2" 
+            gutterBottom 
+            sx={{ 
+              textAlign: 'center', 
+              mb: 3,
+              color: 'text.primary'
+            }}
+          >
+            Sign In
+          </Typography>
+
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             <TextField
               margin="normal"
               required
@@ -84,47 +170,129 @@ const Login: React.FC = () => {
               name="email"
               autoComplete="email"
               autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={email !== '' && !email.includes('@')}
-              helperText={email !== '' && !email.includes('@') ? 'Invalid email format' : ''}
+              value={formData.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Email color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  minHeight: 56,
+                },
+                mb: 2
+              }}
             />
-            
+
             <TextField
               margin="normal"
               required
               fullWidth
               name="password"
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={password !== '' && password.length < 6}
-              helperText={password !== '' && password.length < 6 ? 'Password must be at least 6 characters' : ''}
+              value={formData.password}
+              onChange={handleChange}
+              error={!!errors.password}
+              helperText={errors.password}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock color="action" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleTogglePasswordVisibility}
+                      edge="end"
+                      size="large"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  minHeight: 56,
+                },
+                mb: 3
+              }}
             />
-            
+
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={isSubmitting || !email || !password}
+              disabled={isLoading}
+              startIcon={<LoginIcon />}
+              sx={{
+                mt: 2,
+                mb: 2,
+                py: 2,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                borderRadius: 2,
+                textTransform: 'none',
+                boxShadow: 2,
+                '&:hover': {
+                  boxShadow: 4,
+                }
+              }}
             >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
 
-            <Typography variant="body2" color="text.secondary" align="center">
-              Personal Data Manger
-              <br />
-              New Horizon College of Engineering
-              <br />
-              Bengaluru , Karnataka.
-            </Typography>
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Don't have an account?{' '}
+                <Link 
+                  component={RouterLink} 
+                  to="/register" 
+                  variant="body2"
+                  sx={{ 
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  Sign up here
+                </Link>
+              </Typography>
+            </Box>
+
+            {/* Demo Credentials */}
+            <Alert 
+              severity="info" 
+              sx={{ 
+                mt: 3,
+                fontSize: '0.875rem'
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                Demo Credentials:
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
+                Email: demo@naveen.com
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
+                Password: demo123
+              </Typography>
+            </Alert>
           </Box>
-        </Paper>
-      </Box>
+        </CardContent>
+      </Paper>
     </Container>
   );
 };

@@ -1,88 +1,180 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import React, { useState } from 'react';
 import {
   Box,
-  Button,
+  Card,
+  CardContent,
   TextField,
+  Button,
   Typography,
-  Paper,
-  Container,
   Link,
+  Alert,
+  InputAdornment,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Paper,
+  Container
 } from '@mui/material';
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
+  PersonAdd as RegisterIcon
+} from '@mui/icons-material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 
 const Register: React.FC = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
+
   const { login } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const formik = useFormik({
-    initialValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
-    validationSchema: Yup.object({
-      email: Yup.string()
-        .email('Invalid email address')
-        .required('Required'),
-      password: Yup.string()
-        .min(6, 'Password must be at least 6 characters')
-        .required('Required'),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password')], 'Passwords must match')
-        .required('Required'),
-    }),
-    onSubmit: async (values) => {
-      try {
-        const response = await fetch('http://localhost:5000/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: values.email,
-            password: values.password,
-          }),
-        });
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Registration failed');
-        }
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
 
-        const data = await response.json();
-        await login(values.email, values.password);
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Mock registration - in production this would be a real API call
+      // For demo purposes, we'll just log the user in directly
+      const success = await login(formData.email, formData.password);
+      if (success) {
         showNotification('Registration successful!', 'success');
         navigate('/dashboard');
-      } catch (error) {
-        if (error instanceof Error) {
-          showNotification(error.message, 'error');
-        } else {
-          showNotification('Registration failed', 'error');
-        }
+      } else {
+        showNotification('Registration failed', 'error');
       }
-    },
-  });
+    } catch (error) {
+      showNotification('Registration failed. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleToggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
+    <Container 
+      maxWidth="sm" 
+      sx={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: isMobile ? 2 : 4
+      }}
+    >
+      <Paper 
+        elevation={isMobile ? 2 : 8}
         sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          width: '100%',
+          maxWidth: isMobile ? '100%' : 400,
+          borderRadius: isMobile ? 2 : 3,
+          overflow: 'hidden'
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography component="h1" variant="h5" align="center" gutterBottom>
-            Create Account
+        {/* Header */}
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+            color: 'white',
+            p: isMobile ? 3 : 4,
+            textAlign: 'center'
+          }}
+        >
+          <Typography 
+            variant={isMobile ? 'h5' : 'h4'} 
+            component="h1" 
+            gutterBottom
+            sx={{ fontWeight: 600 }}
+          >
+            NAVEEN
           </Typography>
-          <Box component="form" onSubmit={formik.handleSubmit} noValidate>
+          <Typography variant="body1" sx={{ opacity: 0.9 }}>
+            Create Your Account
+          </Typography>
+        </Box>
+
+        {/* Registration Form */}
+        <CardContent sx={{ p: isMobile ? 3 : 4 }}>
+          <Typography 
+            variant="h6" 
+            component="h2" 
+            gutterBottom 
+            sx={{ 
+              textAlign: 'center', 
+              mb: 3,
+              color: 'text.primary'
+            }}
+          >
+            Sign Up
+          </Typography>
+
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             <TextField
               margin="normal"
               required
@@ -92,59 +184,169 @@ const Register: React.FC = () => {
               name="email"
               autoComplete="email"
               autoFocus
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.email && Boolean(formik.errors.email)}
-              helperText={formik.touched.email && formik.errors.email}
+              value={formData.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Email color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  minHeight: isMobile ? 48 : 56,
+                },
+                mb: 2
+              }}
             />
+
             <TextField
               margin="normal"
               required
               fullWidth
               name="password"
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="new-password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.password && Boolean(formik.errors.password)}
-              helperText={formik.touched.password && formik.errors.password}
+              value={formData.password}
+              onChange={handleChange}
+              error={!!errors.password}
+              helperText={errors.password}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock color="action" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleTogglePasswordVisibility}
+                      edge="end"
+                      size="large"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  minHeight: isMobile ? 48 : 56,
+                },
+                mb: 2
+              }}
             />
+
             <TextField
               margin="normal"
               required
               fullWidth
               name="confirmPassword"
               label="Confirm Password"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               id="confirmPassword"
               autoComplete="new-password"
-              value={formik.values.confirmPassword}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-              helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock color="action" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle confirm password visibility"
+                      onClick={handleToggleConfirmPasswordVisibility}
+                      edge="end"
+                      size="large"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  minHeight: isMobile ? 48 : 56,
+                },
+                mb: 3
+              }}
             />
+
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={formik.isSubmitting}
+              disabled={isLoading}
+              startIcon={<RegisterIcon />}
+              sx={{
+                mt: 2,
+                mb: 2,
+                py: isMobile ? 1.5 : 2,
+                fontSize: isMobile ? '1rem' : '1.1rem',
+                fontWeight: 600,
+                borderRadius: 2,
+                textTransform: 'none',
+                boxShadow: 2,
+                '&:hover': {
+                  boxShadow: 4,
+                }
+              }}
             >
-              {formik.isSubmitting ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
-            <Box sx={{ textAlign: 'center' }}>
-              <Link href="/login" variant="body2">
-                Already have an account? Sign in
-              </Link>
+
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Already have an account?{' '}
+                <Link 
+                  component={RouterLink} 
+                  to="/login" 
+                  variant="body2"
+                  sx={{ 
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  Sign in here
+                </Link>
+              </Typography>
             </Box>
+
+            {/* Demo Info */}
+            <Alert 
+              severity="info" 
+              sx={{ 
+                mt: 3,
+                fontSize: isMobile ? '0.75rem' : '0.875rem'
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                Demo Registration:
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
+                Use any email and password (min 6 characters)
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
+                The system will create a demo account for you
+              </Typography>
+            </Alert>
           </Box>
-        </Paper>
-      </Box>
+        </CardContent>
+      </Paper>
     </Container>
   );
 };

@@ -1,44 +1,104 @@
-import { createTheme, ThemeOptions } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles';
 
-const lightTheme: ThemeOptions = {
+const theme = createTheme({
   palette: {
-    mode: 'light',
     primary: {
       main: '#1976d2',
+      light: '#42a5f5',
+      dark: '#1565c0',
     },
     secondary: {
       main: '#dc004e',
+      light: '#ff5983',
+      dark: '#9a0036',
     },
     background: {
       default: '#f5f5f5',
       paper: '#ffffff',
     },
   },
+  typography: {
+    fontFamily: [
+      '-apple-system',
+      'BlinkMacSystemFont',
+      '"Segoe UI"',
+      'Roboto',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+      '"Apple Color Emoji"',
+      '"Segoe UI Emoji"',
+      '"Segoe UI Symbol"',
+    ].join(','),
+    h1: {
+      fontSize: '2.5rem',
+      '@media (max-width:600px)': {
+        fontSize: '2rem',
+      },
+    },
+    h2: {
+      fontSize: '2rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.75rem',
+      },
+    },
+    h3: {
+      fontSize: '1.75rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.5rem',
+      },
+    },
+    h4: {
+      fontSize: '1.5rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.25rem',
+      },
+    },
+    h5: {
+      fontSize: '1.25rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.125rem',
+      },
+    },
+    h6: {
+      fontSize: '1.125rem',
+      '@media (max-width:600px)': {
+        fontSize: '1rem',
+      },
+    },
+  },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
+    },
+  },
   components: {
-    MuiCssBaseline: {
+    MuiButton: {
       styleOverrides: {
-        body: {
-          scrollbarColor: '#6b6b6b #2b2b2b',
-          '&::-webkit-scrollbar, & *::-webkit-scrollbar': {
-            backgroundColor: '#2b2b2b',
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          minHeight: 44, // Touch-friendly minimum height
+          '@media (max-width:600px)': {
+            minHeight: 48, // Larger on mobile for better touch targets
           },
-          '&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb': {
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          '@media (max-width:600px)': {
             borderRadius: 8,
-            backgroundColor: '#6b6b6b',
-            minHeight: 24,
-            border: '3px solid #2b2b2b',
-          },
-          '&::-webkit-scrollbar-thumb:focus, & *::-webkit-scrollbar-thumb:focus': {
-            backgroundColor: '#959595',
-          },
-          '&::-webkit-scrollbar-thumb:active, & *::-webkit-scrollbar-thumb:active': {
-            backgroundColor: '#959595',
-          },
-          '&::-webkit-scrollbar-thumb:hover, & *::-webkit-scrollbar-thumb:hover': {
-            backgroundColor: '#959595',
-          },
-          '&::-webkit-scrollbar-corner, & *::-webkit-scrollbar-corner': {
-            backgroundColor: '#2b2b2b',
+            margin: '8px',
           },
         },
       },
@@ -46,39 +106,81 @@ const lightTheme: ThemeOptions = {
     MuiTextField: {
       styleOverrides: {
         root: {
-          '& .MuiOutlinedInput-root': {
-            '& fieldset': {
-              borderColor: '#e0e0e0',
-            },
-            '&:hover fieldset': {
-              borderColor: '#1976d2',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: '#1976d2',
+          '& .MuiInputBase-root': {
+            minHeight: 44, // Touch-friendly input height
+            '@media (max-width:600px)': {
+              minHeight: 48,
             },
           },
         },
       },
     },
+    MuiListItem: {
+      styleOverrides: {
+        root: {
+          minHeight: 48, // Touch-friendly list item height
+          '@media (max-width:600px)': {
+            minHeight: 56,
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          minWidth: 44,
+          minHeight: 44,
+          '@media (max-width:600px)': {
+            minWidth: 48,
+            minHeight: 48,
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          width: 280,
+          '@media (max-width:600px)': {
+            width: '100%',
+          },
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 12,
+          '@media (max-width:600px)': {
+            margin: 16,
+            maxWidth: 'calc(100% - 32px)',
+            maxHeight: 'calc(100% - 32px)',
+          },
+        },
+      },
+    },
+    MuiSpeedDial: {
+      styleOverrides: {
+        fab: {
+          '@media (max-width:600px)': {
+            width: 56,
+            height: 56,
+          },
+        },
+      },
+    },
   },
-};
-
-const darkTheme: ThemeOptions = {
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#90caf9',
-    },
-    secondary: {
-      main: '#f48fb1',
-    },
-    background: {
-      default: '#121212',
-      paper: '#1e1e1e',
-    },
+  shape: {
+    borderRadius: 8,
   },
-};
+  spacing: 8,
+});
 
-export const getTheme = (mode: 'light' | 'dark') => {
-  return createTheme(mode === 'light' ? lightTheme : darkTheme);
-}; 
+export default theme; 

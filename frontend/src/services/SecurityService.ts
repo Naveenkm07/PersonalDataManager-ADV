@@ -12,6 +12,7 @@ interface SecurityLogEntry {
 }
 
 interface SecureNote {
+  _id?: string; // MongoDB ID
   id: string;
   title: string;
   content: string;
@@ -19,6 +20,7 @@ interface SecureNote {
   createdAt: string;
   updatedAt: string;
   tags: string[];
+  userId?: string; // Add userId for backend compatibility
 }
 
 interface Session {
@@ -32,6 +34,7 @@ interface Session {
 
 class SecurityService {
   private static instance: SecurityService;
+  private readonly API_BASE_URL = 'http://localhost:5000/api';
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
   private readonly MAX_LOGIN_ATTEMPTS = 5;
   private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
@@ -49,6 +52,40 @@ class SecurityService {
     return SecurityService.instance;
   }
 
+  private getAuthToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
+  private async apiCall(endpoint: string, method: string, data?: any): Promise<any> {
+    const token = this.getAuthToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const config: RequestInit = {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+    };
+
+    const response = await fetch(`${this.API_BASE_URL}${endpoint}`, config);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'API call failed');
+    }
+    
+    // Handle 204 No Content for successful deletions
+    if (response.status === 204) {
+      return null; 
+    }
+
+    return response.json();
+  }
+
   private initializeSecurityLogs(): void {
     if (!localStorage.getItem('securityLogs')) {
       localStorage.setItem('securityLogs', JSON.stringify([]));
@@ -59,9 +96,7 @@ class SecurityService {
     if (!localStorage.getItem('loginAttempts')) {
       localStorage.setItem('loginAttempts', JSON.stringify({}));
     }
-    if (!localStorage.getItem('secureNotes')) {
-      localStorage.setItem('secureNotes', JSON.stringify([]));
-    }
+    // Removed localStorage.getItem('secureNotes') as notes will be fetched from backend
   }
 
   private initializeDeviceKey(): void {
@@ -74,70 +109,79 @@ class SecurityService {
   }
 
   // Secure Notes
-  public createSecureNote(title: string, content: string, tags: string[] = []): SecureNote {
-    const note: SecureNote = {
-      id: uuidv4(),
-      title,
-      content: this.encryptData(content, this.deviceKey),
-      encrypted: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      tags
-    };
-
-    const notes = this.getSecureNotes();
-    notes.push(note);
-    localStorage.setItem('secureNotes', JSON.stringify(notes));
-    
-    this.logSecurityEvent('secure_note', 'success', 'Secure note created');
-    return note;
+  public async createSecureNote(title: string, content: string, tags: string[] = []): Promise<SecureNote> {
+    try {
+      const encryptedContent = this.encryptData(content, this.deviceKey);
+      const newNote = await this.apiCall('/notes', 'POST', {
+        title,
+        content: encryptedContent,
+        encrypted: true,
+        tags,
+      });
+      this.logSecurityEvent('secure_note', 'success', 'Secure note created');
+      return newNote;
+    } catch (error: any) {
+      this.logSecurityEvent('secure_note', 'failure', `Failed to create secure note: ${error.message}`);
+      throw error;
+    }
   }
 
-  public updateSecureNote(id: string, title: string, content: string, tags: string[] = []): SecureNote | null {
-    const notes = this.getSecureNotes();
-    const noteIndex = notes.findIndex(note => note.id === id);
-    
-    if (noteIndex === -1) return null;
-
-    const updatedNote: SecureNote = {
-      ...notes[noteIndex],
-      title,
-      content: this.encryptData(content, this.deviceKey),
-      tags,
-      updatedAt: new Date().toISOString()
-    };
-
-    notes[noteIndex] = updatedNote;
-    localStorage.setItem('secureNotes', JSON.stringify(notes));
-    
-    this.logSecurityEvent('secure_note', 'success', 'Secure note updated');
-    return updatedNote;
+  public async updateSecureNote(id: string, title: string, content: string, tags: string[] = []): Promise<SecureNote | null> {
+    try {
+      const encryptedContent = this.encryptData(content, this.deviceKey);
+      const updatedNote = await this.apiCall(`/notes/${id}`, 'PUT', {
+        title,
+        content: encryptedContent,
+        encrypted: true,
+        tags,
+      });
+      this.logSecurityEvent('secure_note', 'success', 'Secure note updated');
+      return updatedNote;
+    } catch (error: any) {
+      this.logSecurityEvent('secure_note', 'failure', `Failed to update secure note: ${error.message}`);
+      throw error;
+    }
   }
 
-  public deleteSecureNote(id: string): boolean {
-    const notes = this.getSecureNotes();
-    const filteredNotes = notes.filter(note => note.id !== id);
-    
-    if (filteredNotes.length === notes.length) return false;
-    
-    localStorage.setItem('secureNotes', JSON.stringify(filteredNotes));
-    this.logSecurityEvent('secure_note', 'success', 'Secure note deleted');
-    return true;
+  public async deleteSecureNote(id: string): Promise<boolean> {
+    try {
+      await this.apiCall(`/notes/${id}`, 'DELETE');
+      this.logSecurityEvent('secure_note', 'success', 'Secure note deleted');
+      return true;
+    } catch (error: any) {
+      this.logSecurityEvent('secure_note', 'failure', `Failed to delete secure note: ${error.message}`);
+      throw error;
+    }
   }
 
-  public getSecureNotes(): SecureNote[] {
-    return JSON.parse(localStorage.getItem('secureNotes') || '[]');
+  public async getSecureNotes(): Promise<SecureNote[]> {
+    try {
+      const notes: SecureNote[] = await this.apiCall('/notes', 'GET');
+      // Decrypt content for display
+      return notes.map(note => ({
+        ...note,
+        content: note.encrypted ? (this.decryptData(note.content, this.deviceKey) || '') : note.content,
+      }));
+    } catch (error: any) {
+      this.logSecurityEvent('secure_note', 'failure', `Failed to fetch secure notes: ${error.message}`);
+      console.error('Error fetching secure notes:', error);
+      return [];
+    }
   }
 
-  public getSecureNote(id: string): SecureNote | null {
-    const notes = this.getSecureNotes();
-    const note = notes.find(note => note.id === id);
-    if (!note) return null;
-
-    return {
-      ...note,
-      content: this.decryptData(note.content, this.deviceKey) || ''
-    };
+  public async getSecureNote(id: string): Promise<SecureNote | null> {
+    try {
+      const note: SecureNote = await this.apiCall(`/notes/${id}`, 'GET');
+      // Decrypt content for display
+      return {
+        ...note,
+        content: note.encrypted ? (this.decryptData(note.content, this.deviceKey) || '') : note.content,
+      };
+    } catch (error: any) {
+      this.logSecurityEvent('secure_note', 'failure', `Failed to fetch secure note: ${error.message}`);
+      console.error('Error fetching single secure note:', error);
+      return null;
+    }
   }
 
   // Master Password Management
@@ -248,64 +292,54 @@ class SecurityService {
   public trackLoginAttempt(userId: string): boolean {
     const attempts = this.getLoginAttempts();
     const now = Date.now();
-    
+
     if (!attempts[userId]) {
       attempts[userId] = { count: 0, lastAttempt: now, lockedUntil: null };
     }
-    
-    const userAttempts = attempts[userId];
-    
-    // Check if user is locked out
-    if (userAttempts.lockedUntil && now < userAttempts.lockedUntil) {
+
+    attempts[userId].count++;
+    attempts[userId].lastAttempt = now;
+    localStorage.setItem('loginAttempts', JSON.stringify(attempts));
+
+    if (attempts[userId].count >= this.MAX_LOGIN_ATTEMPTS) {
+      attempts[userId].lockedUntil = now + this.LOCKOUT_DURATION;
+      localStorage.setItem('loginAttempts', JSON.stringify(attempts));
+      this.logSecurityEvent('login', 'failure', `User ${userId} locked out due to too many failed attempts`);
       return false;
     }
-    
-    // Reset lockout if lockout period has passed
-    if (userAttempts.lockedUntil && now >= userAttempts.lockedUntil) {
-      userAttempts.count = 0;
-      userAttempts.lockedUntil = null;
-    }
-    
-    userAttempts.count++;
-    userAttempts.lastAttempt = now;
-    
-    // Lock user if max attempts reached
-    if (userAttempts.count >= this.MAX_LOGIN_ATTEMPTS) {
-      userAttempts.lockedUntil = now + this.LOCKOUT_DURATION;
-    }
-    
-    localStorage.setItem('loginAttempts', JSON.stringify(attempts));
-    return !userAttempts.lockedUntil;
+
+    return true;
+  }
+
+  public isAccountLocked(userId: string): boolean {
+    const attempts = this.getLoginAttempts();
+    const userAttempts = attempts[userId];
+    if (!userAttempts || !userAttempts.lockedUntil) return false;
+    return Date.now() < userAttempts.lockedUntil;
   }
 
   public resetLoginAttempts(userId: string): void {
     const attempts = this.getLoginAttempts();
-    delete attempts[userId];
-    localStorage.setItem('loginAttempts', JSON.stringify(attempts));
+    if (attempts[userId]) {
+      delete attempts[userId];
+      localStorage.setItem('loginAttempts', JSON.stringify(attempts));
+    }
   }
 
-  // Security Logging
   public logSecurityEvent(
     type: SecurityLogEntry['type'],
     status: SecurityLogEntry['status'],
     details: string
   ): void {
-    const logs = this.getSecurityLogs();
-    const log: SecurityLogEntry = {
+    const logs: SecurityLogEntry[] = JSON.parse(localStorage.getItem('securityLogs') || '[]');
+    const newLog: SecurityLogEntry = {
       id: uuidv4(),
       timestamp: new Date().toISOString(),
       type,
       status,
       details,
-      ip: 'local' // In a real app, this would be the actual IP
     };
-    
-    logs.unshift(log);
-    // Keep only last 1000 logs
-    if (logs.length > 1000) {
-      logs.pop();
-    }
-    
+    logs.unshift(newLog);
     localStorage.setItem('securityLogs', JSON.stringify(logs));
   }
 
@@ -313,7 +347,6 @@ class SecurityService {
     return JSON.parse(localStorage.getItem('securityLogs') || '[]');
   }
 
-  // Helper Methods
   private getSessions(): Session[] {
     return JSON.parse(localStorage.getItem('sessions') || '[]');
   }
@@ -323,14 +356,13 @@ class SecurityService {
   }
 
   private generateSalt(): string {
-    return Math.random().toString(36).substring(2, 15);
+    return CryptoJS.lib.WordArray.random(128 / 8).toString(CryptoJS.enc.Hex);
   }
 
   private hashPassword(password: string, salt: string): string {
-    return CryptoJS.SHA256(password + salt).toString();
+    return CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: 1000 }).toString(CryptoJS.enc.Hex);
   }
 
-  // Encryption/Decryption
   public encryptData(data: any, key: string): string {
     return CryptoJS.AES.encrypt(JSON.stringify(data), key).toString();
   }
@@ -339,7 +371,8 @@ class SecurityService {
     try {
       const bytes = CryptoJS.AES.decrypt(encryptedData, key);
       return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-    } catch (error) {
+    } catch (e) {
+      console.error("Decryption failed:", e);
       return null;
     }
   }

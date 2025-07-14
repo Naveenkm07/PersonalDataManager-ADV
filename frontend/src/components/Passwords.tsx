@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Box,
   Card,
@@ -36,7 +37,7 @@ import {
 import { useNotification } from '../contexts/NotificationContext';
 
 interface Password {
-  id: string;
+  _id: string;
   title: string;
   username: string;
   password: string;
@@ -73,14 +74,16 @@ const Passwords: React.FC = () => {
   const { showNotification } = useNotification();
 
   useEffect(() => {
-    try {
-      const storedPasswords = localStorage.getItem('passwords');
-      if (storedPasswords) {
-        setPasswords(JSON.parse(storedPasswords));
+    const fetchPasswords = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/passwords');
+        setPasswords(response.data);
+      } catch (error) {
+        showNotification('Error fetching passwords', 'error');
+        console.error('Error fetching passwords:', error);
       }
-    } catch (error) {
-      showNotification('Error loading passwords', 'error');
-    }
+    };
+    fetchPasswords();
   }, [showNotification]);
 
   const generatePassword = () => {
@@ -124,38 +127,31 @@ const Passwords: React.FC = () => {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newPassword.title || !newPassword.username || !newPassword.password) {
       showNotification('Please fill in all required fields', 'error');
       return;
     }
 
     try {
-      const updatedPasswords = [
-        ...passwords,
-        {
-          ...newPassword,
-          id: Date.now().toString(),
-        } as Password,
-      ];
-
-      localStorage.setItem('passwords', JSON.stringify(updatedPasswords));
-      setPasswords(updatedPasswords);
+      const response = await axios.post('http://localhost:5000/api/passwords', newPassword);
+      setPasswords(prevPasswords => [...prevPasswords, response.data]);
       handleClose();
       showNotification('Password saved successfully', 'success');
     } catch (error) {
       showNotification('Error saving password', 'error');
+      console.error('Error saving password:', error);
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      const updatedPasswords = passwords.filter((pwd) => pwd.id !== id);
-      localStorage.setItem('passwords', JSON.stringify(updatedPasswords));
-      setPasswords(updatedPasswords);
+      await axios.delete(`http://localhost:5000/api/passwords/${id}`);
+      setPasswords(prevPasswords => prevPasswords.filter((pwd) => pwd._id !== id));
       showNotification('Password deleted successfully', 'success');
     } catch (error) {
       showNotification('Error deleting password', 'error');
+      console.error('Error deleting password:', error);
     }
   };
 
@@ -181,10 +177,6 @@ const Passwords: React.FC = () => {
         Password Manager
       </Typography>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Store and manage your passwords securely. All data is stored locally in your browser.
-      </Alert>
-
       <Button
         variant="contained"
         startIcon={<AddIcon />}
@@ -205,7 +197,7 @@ const Passwords: React.FC = () => {
             </ListItem>
           ) : (
             passwords.map((pwd) => (
-              <React.Fragment key={pwd.id}>
+              <React.Fragment key={pwd._id}>
                 <ListItem>
                   <ListItemText
                     primary={pwd.title}
@@ -215,7 +207,7 @@ const Passwords: React.FC = () => {
                           Username: {pwd.username}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Password: {showPassword[pwd.id] ? pwd.password : '••••••••'}
+                          Password: {showPassword[pwd._id] ? pwd.password : '••••••••'}
                         </Typography>
                         {pwd.url && (
                           <Typography variant="body2" color="text.secondary">
@@ -242,14 +234,14 @@ const Passwords: React.FC = () => {
                     </IconButton>
                     <IconButton
                       edge="end"
-                      onClick={() => togglePasswordVisibility(pwd.id)}
-                      title={showPassword[pwd.id] ? 'Hide password' : 'Show password'}
+                      onClick={() => togglePasswordVisibility(pwd._id)}
+                      title={showPassword[pwd._id] ? 'Hide password' : 'Show password'}
                     >
-                      {showPassword[pwd.id] ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      {showPassword[pwd._id] ? <VisibilityOffIcon /> : <VisibilityIcon />}
                     </IconButton>
                     <IconButton
                       edge="end"
-                      onClick={() => handleDelete(pwd.id)}
+                      onClick={() => handleDelete(pwd._id)}
                       title="Delete password"
                     >
                       <DeleteIcon />
@@ -342,7 +334,7 @@ const Passwords: React.FC = () => {
           <TextField
             margin="dense"
             label="Password"
-            type={showPassword['new'] ? 'text' : 'password'}
+            type={showPassword['newPasswordInput'] ? 'text' : 'password'}
             fullWidth
             required
             value={newPassword.password}
@@ -359,10 +351,10 @@ const Passwords: React.FC = () => {
                     <RefreshIcon />
                   </IconButton>
                   <IconButton
-                    onClick={() => setShowPassword(prev => ({ ...prev, new: !prev['new'] }))}
-                    edge="end"
+                    onClick={() => togglePasswordVisibility('newPasswordInput')}
+                    title={showPassword['newPasswordInput'] ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword['new'] ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    {showPassword['newPasswordInput'] ? <VisibilityOffIcon /> : <VisibilityIcon />}
                   </IconButton>
                 </InputAdornment>
               ),

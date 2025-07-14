@@ -62,9 +62,15 @@ const SecureNotes: React.FC = () => {
     loadNotes();
   }, []);
 
-  const loadNotes = () => {
-    const loadedNotes = securityService.getSecureNotes();
-    setNotes(loadedNotes);
+  const loadNotes = async () => {
+    try {
+      const loadedNotes = await securityService.getSecureNotes();
+      setNotes(loadedNotes);
+    } catch (error) {
+      console.error("Failed to load notes:", error);
+      showNotification("Failed to load notes", "error");
+      setNotes([]);
+    }
   };
 
   const formik = useFormik({
@@ -74,28 +80,33 @@ const SecureNotes: React.FC = () => {
       tags: '',
     },
     validationSchema,
-    onSubmit: (values) => {
+    onSubmit: async (values) => {
       const tags = values.tags
         .split(',')
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
-      if (editingNote) {
-        const updatedNote = securityService.updateSecureNote(
-          editingNote.id,
-          values.title,
-          values.content,
-          tags
-        );
-        if (updatedNote) {
-          showNotification('Note updated successfully', 'success');
+      try {
+        if (editingNote) {
+          const updatedNote = await securityService.updateSecureNote(
+            editingNote.id,
+            values.title,
+            values.content,
+            tags
+          );
+          if (updatedNote) {
+            showNotification('Note updated successfully', 'success');
+          }
+        } else {
+          await securityService.createSecureNote(values.title, values.content, tags);
+          showNotification('Note created successfully', 'success');
         }
-      } else {
-        securityService.createSecureNote(values.title, values.content, tags);
-        showNotification('Note created successfully', 'success');
+        handleClose();
+        loadNotes();
+      } catch (error) {
+        console.error("Failed to save note:", error);
+        showNotification("Failed to save note", "error");
       }
-      handleClose();
-      loadNotes();
     },
   });
 
@@ -120,10 +131,16 @@ const SecureNotes: React.FC = () => {
     formik.resetForm();
   };
 
-  const handleDelete = (id: string) => {
-    if (securityService.deleteSecureNote(id)) {
-      showNotification('Note deleted successfully', 'success');
-      loadNotes();
+  const handleDelete = async (id: string) => {
+    try {
+      const success = await securityService.deleteSecureNote(id);
+      if (success) {
+        showNotification('Note deleted successfully', 'success');
+        loadNotes();
+      }
+    } catch (error) {
+      console.error("Failed to delete note:", error);
+      showNotification("Failed to delete note", "error");
     }
   };
 

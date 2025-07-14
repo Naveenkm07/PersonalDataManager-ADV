@@ -11,7 +11,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -48,28 +48,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
+      // Demo authentication - accepts any valid email/password combination
+      // In production, this would be a real API call with proper validation
+      if (email && password && password.length >= 6 && /\S+@\S+\.\S+/.test(email)) {
+        const userData = {
+          user: {
+            id: '1',
+            username: email.split('@')[0], // Use email prefix as username
+            email: email
+          },
+          token: 'demo-token-' + Date.now()
+        };
+        setUser(userData.user);
+        localStorage.setItem('user', JSON.stringify(userData.user));
+        localStorage.setItem('token', userData.token);
+        localStorage.setItem('isLoggedIn', 'true');
+        return true;
+      } else {
+        return false;
       }
-
-      const userData = await response.json();
-      setUser(userData.user);
-      localStorage.setItem('user', JSON.stringify(userData.user));
-      localStorage.setItem('token', userData.token);
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -87,10 +90,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
   };
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }; 

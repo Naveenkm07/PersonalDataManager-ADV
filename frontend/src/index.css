@@ -5,9 +5,612 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Basic responsive design */
+@media (max-width: 600px) {
+  body {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  /* Touch-friendly button styles */
+  button, 
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent text selection on buttons */
+  button {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Better tap highlights */
+  * {
+    -webkit-tap-highlight-color: rgba(25, 118, 210, 0.2);
+  }
+}
+
+/* Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Better mobile scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-friendly form elements */
+input, select, textarea {
+  font-size: 16px !important; /* Prevent zoom on iOS */
+}
+
+/* Safe area support for notched devices */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-left {
+    padding-left: max(16px, env(safe-area-inset-left));
+  }
+  
+  .safe-area-right {
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
+/* Loading animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Mobile card improvements */
+@media (max-width: 600px) {
+  .MuiCard-root {
+    margin: 8px;
+    border-radius: 8px;
+  }
+  
+  .MuiCardContent-root {
+    padding: 16px;
+  }
+}
+
+/* Mobile dialog improvements */
+@media (max-width: 600px) {
+  .MuiDialog-paper {
+    margin: 16px;
+    max-width: calc(100% - 32px) !important;
+    max-height: calc(100% - 32px) !important;
+  }
+}
+
+/* Mobile table improvements */
+@media (max-width: 600px) {
+  .MuiTable-root {
+    font-size: 14px;
+  }
+  
+  .MuiTableCell-root {
+    padding: 8px 4px;
+  }
+}
+
+/* Mobile list improvements */
+@media (max-width: 600px) {
+  .MuiListItem-root {
+    min-height: 56px;
+  }
+  
+  .MuiListItemButton-root {
+    min-height: 56px;
+  }
+}
+
+/* Mobile icon button improvements */
+@media (max-width: 600px) {
+  .MuiIconButton-root {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+/* Mobile speed dial improvements */
+@media (max-width: 600px) {
+  .MuiSpeedDial-fab {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  
+  .MuiSpeedDialAction-staticTooltip {
+    font-size: 14px;
+  }
+}
+
+/* Mobile drawer improvements */
+@media (max-width: 600px) {
+  .MuiDrawer-paper {
+    width: 100% !important;
+  }
+}
+
+/* Mobile app bar improvements */
+@media (max-width: 600px) {
+  .MuiAppBar-root {
+    height: 56px;
+  }
+  
+  .MuiToolbar-root {
+    min-height: 56px;
+  }
+}
+
+/* Mobile container improvements */
+@media (max-width: 600px) {
+  .MuiContainer-root {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* Mobile grid improvements */
+@media (max-width: 600px) {
+  .MuiGrid-item {
+    padding: 8px;
+  }
+}
+
+/* Mobile spacing improvements */
+@media (max-width: 600px) {
+  .mobile-spacing {
+    margin: 8px;
+    padding: 8px;
+  }
+}
+
+/* Mobile typography improvements */
+@media (max-width: 600px) {
+  .MuiTypography-h1 {
+    font-size: 2rem;
+  }
+  
+  .MuiTypography-h2 {
+    font-size: 1.75rem;
+  }
+  
+  .MuiTypography-h3 {
+    font-size: 1.5rem;
+  }
+  
+  .MuiTypography-h4 {
+    font-size: 1.25rem;
+  }
+  
+  .MuiTypography-h5 {
+    font-size: 1.125rem;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 1rem;
+  }
+  
+  .MuiTypography-body1 {
+    font-size: 0.875rem;
+  }
+  
+  .MuiTypography-body2 {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Mobile button improvements */
+@media (max-width: 600px) {
+  .MuiButton-root {
+    min-height: 48px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  
+  .MuiButton-contained {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+}
+
+/* Mobile chip improvements */
+@media (max-width: 600px) {
+  .MuiChip-root {
+    height: 32px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Mobile avatar improvements */
+@media (max-width: 600px) {
+  .MuiAvatar-root {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Mobile badge improvements */
+@media (max-width: 600px) {
+  .MuiBadge-badge {
+    font-size: 0.75rem;
+    min-width: 20px;
+    height: 20px;
+  }
+}
+
+/* Mobile tooltip improvements */
+@media (max-width: 600px) {
+  .MuiTooltip-tooltip {
+    font-size: 0.75rem;
+    padding: 8px 12px;
+  }
+}
+
+/* Mobile snackbar improvements */
+@media (max-width: 600px) {
+  .MuiSnackbar-root {
+    bottom: 80px !important; /* Above bottom navigation */
+  }
+}
+
+/* Mobile fab improvements */
+@media (max-width: 600px) {
+  .MuiFab-root {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* Mobile paper improvements */
+@media (max-width: 600px) {
+  .MuiPaper-root {
+    border-radius: 8px;
+  }
+}
+
+/* Mobile divider improvements */
+@media (max-width: 600px) {
+  .MuiDivider-root {
+    margin: 8px 0;
+  }
+}
+
+/* Mobile switch improvements */
+@media (max-width: 600px) {
+  .MuiSwitch-root {
+    width: 52px;
+    height: 32px;
+  }
+}
+
+/* Mobile slider improvements */
+@media (max-width: 600px) {
+  .MuiSlider-root {
+    height: 4px;
+  }
+  
+  .MuiSlider-thumb {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Mobile progress improvements */
+@media (max-width: 600px) {
+  .MuiLinearProgress-root {
+    height: 4px;
+  }
+  
+  .MuiCircularProgress-root {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* Mobile skeleton improvements */
+@media (max-width: 600px) {
+  .MuiSkeleton-root {
+    border-radius: 4px;
+  }
+}
+
+/* Mobile alert improvements */
+@media (max-width: 600px) {
+  .MuiAlert-root {
+    margin: 8px;
+    border-radius: 8px;
+  }
+}
+
+/* Mobile accordion improvements */
+@media (max-width: 600px) {
+  .MuiAccordion-root {
+    margin: 4px 0;
+  }
+  
+  .MuiAccordionSummary-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile autocomplete improvements */
+@media (max-width: 600px) {
+  .MuiAutocomplete-root .MuiInputBase-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile date picker improvements */
+@media (max-width: 600px) {
+  .MuiDatePicker-root .MuiInputBase-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile time picker improvements */
+@media (max-width: 600px) {
+  .MuiTimePicker-root .MuiInputBase-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile rating improvements */
+@media (max-width: 600px) {
+  .MuiRating-root {
+    font-size: 1.5rem;
+  }
+}
+
+/* Mobile tabs improvements */
+@media (max-width: 600px) {
+  .MuiTabs-root {
+    min-height: 48px;
+  }
+  
+  .MuiTab-root {
+    min-height: 48px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile stepper improvements */
+@media (max-width: 600px) {
+  .MuiStepper-root {
+    padding: 16px;
+  }
+  
+  .MuiStepLabel-root {
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile breadcrumbs improvements */
+@media (max-width: 600px) {
+  .MuiBreadcrumbs-root {
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile pagination improvements */
+@media (max-width: 600px) {
+  .MuiPagination-root {
+    font-size: 0.875rem;
+  }
+  
+  .MuiPaginationItem-root {
+    min-width: 40px;
+    height: 40px;
+  }
+}
+
+/* Mobile menu improvements */
+@media (max-width: 600px) {
+  .MuiMenu-paper {
+    max-height: calc(100% - 32px);
+    max-width: calc(100% - 32px);
+  }
+}
+
+/* Mobile popover improvements */
+@media (max-width: 600px) {
+  .MuiPopover-paper {
+    max-height: calc(100% - 32px);
+    max-width: calc(100% - 32px);
+  }
+}
+
+/* Mobile modal improvements */
+@media (max-width: 600px) {
+  .MuiModal-root .MuiBox-root {
+    margin: 16px;
+    max-width: calc(100% - 32px);
+    max-height: calc(100% - 32px);
+  }
+}
+
+/* Mobile backdrop improvements */
+@media (max-width: 600px) {
+  .MuiBackdrop-root {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+}
+
+/* Mobile circular progress improvements */
+@media (max-width: 600px) {
+  .MuiCircularProgress-root {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* Mobile linear progress improvements */
+@media (max-width: 600px) {
+  .MuiLinearProgress-root {
+    height: 4px;
+  }
+}
+
+/* Mobile skeleton improvements */
+@media (max-width: 600px) {
+  .MuiSkeleton-root {
+    border-radius: 4px;
+  }
+}
+
+/* Mobile alert improvements */
+@media (max-width: 600px) {
+  .MuiAlert-root {
+    margin: 8px;
+    border-radius: 8px;
+  }
+}
+
+/* Mobile accordion improvements */
+@media (max-width: 600px) {
+  .MuiAccordion-root {
+    margin: 4px 0;
+  }
+  
+  .MuiAccordionSummary-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile autocomplete improvements */
+@media (max-width: 600px) {
+  .MuiAutocomplete-root .MuiInputBase-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile date picker improvements */
+@media (max-width: 600px) {
+  .MuiDatePicker-root .MuiInputBase-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile time picker improvements */
+@media (max-width: 600px) {
+  .MuiTimePicker-root .MuiInputBase-root {
+    min-height: 48px;
+  }
+}
+
+/* Mobile rating improvements */
+@media (max-width: 600px) {
+  .MuiRating-root {
+    font-size: 1.5rem;
+  }
+}
+
+/* Mobile tabs improvements */
+@media (max-width: 600px) {
+  .MuiTabs-root {
+    min-height: 48px;
+  }
+  
+  .MuiTab-root {
+    min-height: 48px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile stepper improvements */
+@media (max-width: 600px) {
+  .MuiStepper-root {
+    padding: 16px;
+  }
+  
+  .MuiStepLabel-root {
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile breadcrumbs improvements */
+@media (max-width: 600px) {
+  .MuiBreadcrumbs-root {
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile pagination improvements */
+@media (max-width: 600px) {
+  .MuiPagination-root {
+    font-size: 0.875rem;
+  }
+  
+  .MuiPaginationItem-root {
+    min-width: 40px;
+    height: 40px;
+  }
+}
+
+/* Mobile menu improvements */
+@media (max-width: 600px) {
+  .MuiMenu-paper {
+    max-height: calc(100% - 32px);
+    max-width: calc(100% - 32px);
+  }
+}
+
+/* Mobile popover improvements */
+@media (max-width: 600px) {
+  .MuiPopover-paper {
+    max-height: calc(100% - 32px);
+    max-width: calc(100% - 32px);
+  }
+}
+
+/* Mobile modal improvements */
+@media (max-width: 600px) {
+  .MuiModal-root .MuiBox-root {
+    margin: 16px;
+    max-width: calc(100% - 32px);
+    max-height: calc(100% - 32px);
+  }
+}
+
+/* Mobile backdrop improvements */
+@media (max-width: 600px) {
+  .MuiBackdrop-root {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
 }

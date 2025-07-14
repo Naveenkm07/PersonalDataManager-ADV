@@ -1,41 +1,48 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "naveen-dreamm-frontend",
+  "version": "1.0.0",
+  "description": "NAVEEN DREAMM - Digital Life Management System Frontend",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^5.17.1",
-    "@mui/material": "^5.17.1",
-    "@mui/x-date-pickers": "^8.3.0",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.19",
+    "@mui/material": "^5.14.20",
+    "@mui/x-data-grid": "^6.18.2",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@types/file-saver": "^2.0.7",
     "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.80",
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
-    "crypto-js": "^4.2.0",
-    "date-fns": "^2.30.0",
+    "@types/jszip": "^3.4.0",
+    "@types/node": "^16.18.68",
+    "@types/react": "^18.2.42",
+    "@types/react-dom": "^18.2.17",
+    "axios": "^1.6.2",
     "file-saver": "^2.0.5",
-    "formik": "^2.4.6",
+    "html-webpack-plugin": "^5.6.3",
     "jszip": "^3.10.1",
-    "otpauth": "^9.2.2",
     "react": "^18.2.0",
+    "react-device-detect": "^2.2.3",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.30.0",
-    "react-scripts": "5.0.1",
+    "react-intersection-observer": "^9.5.3",
+    "react-router-dom": "^6.20.1",
+    "react-scripts": "^5.0.1",
+    "react-swipeable": "^7.0.1",
     "recharts": "^2.15.3",
     "typescript": "^4.9.5",
-    "uuid": "^9.0.1",
     "web-vitals": "^2.1.4",
-    "yup": "^1.6.1"
+    "workbox-webpack-plugin": "^7.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:mobile": "GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
+    "mobile:serve": "npx serve -s build -l 3000",
+    "mobile:test": "npx lighthouse http://localhost:3000 --view"
   },
   "eslintConfig": {
     "extends": [
@@ -47,18 +54,45 @@
     "production": [
       ">0.2%",
       "not dead",
-      "not op_mini all"
+      "not op_mini all",
+      "last 2 versions",
+      "iOS >= 12",
+      "Android >= 8"
     ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
-      "last 1 safari version"
+      "last 1 safari version",
+      "last 1 edge version"
     ]
   },
   "devDependencies": {
-    "@types/crypto-js": "^4.2.2",
-    "@types/file-saver": "^2.0.7",
-    "@types/jszip": "^3.4.1",
-    "@types/uuid": "^9.0.8"
+    "@types/react-router-dom": "^5.3.3"
+  },
+  "proxy": "http://localhost:5000",
+  "homepage": ".",
+  "pwa": {
+    "name": "NAVEEN DREAMM",
+    "short_name": "NAVEEN",
+    "description": "Digital Life Management System by NAVEEN KUMAR KM",
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#1976d2",
+    "background_color": "#ffffff",
+    "orientation": "portrait-primary",
+    "icons": [
+      {
+        "src": "logo192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "logo512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
   }
 }
