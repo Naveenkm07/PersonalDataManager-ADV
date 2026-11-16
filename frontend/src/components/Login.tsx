@@ -7,7 +7,6 @@ import {
   Button,
   Typography,
   Link,
-  Alert,
   InputAdornment,
   IconButton,
   useTheme,
@@ -32,6 +31,8 @@ const Login: React.FC = () => {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -52,9 +53,8 @@ const Login: React.FC = () => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
     }
+    if (mfaRequired && !/^\d{6}$/.test(otp)) newErrors.otp = 'Enter the six-digit authenticator code';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -69,7 +69,7 @@ const Login: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const success = await login(formData.email, formData.password);
+      const success = await login(formData.email, formData.password, mfaRequired ? otp : undefined);
       if (success) {
         showNotification('Login successful!', 'success');
         navigate('/dashboard');
@@ -77,6 +77,11 @@ const Login: React.FC = () => {
         showNotification('Invalid credentials', 'error');
       }
     } catch (error) {
+      if (error instanceof Error && error.message === 'MFA_REQUIRED') {
+        setMfaRequired(true);
+        showNotification('Enter the code from your authenticator app.', 'info');
+        return;
+      }
       showNotification('Login failed. Please try again.', 'error');
     } finally {
       setIsLoading(false);
@@ -189,6 +194,21 @@ const Login: React.FC = () => {
               }}
             />
 
+            {mfaRequired && (
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="otp"
+                label="Authenticator code"
+                value={otp}
+                onChange={event => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                error={!!errors.otp}
+                helperText={errors.otp || 'Enter the six-digit code from your authenticator app.'}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]{6}', maxLength: 6 }}
+              />
+            )}
+
             <TextField
               margin="normal"
               required
@@ -272,24 +292,6 @@ const Login: React.FC = () => {
               </Typography>
             </Box>
 
-            {/* Demo Credentials */}
-            <Alert 
-              severity="info" 
-              sx={{ 
-                mt: 3,
-                fontSize: '0.875rem'
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                Demo Credentials:
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
-                Email: demo@naveen.com
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
-                Password: demo123
-              </Typography>
-            </Alert>
           </Box>
         </CardContent>
       </Paper>

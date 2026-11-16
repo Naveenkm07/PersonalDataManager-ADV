@@ -5,14 +5,9 @@ const SharedItem = require('../models/SharedItem');
 const Password = require('../models/Password');
 const SecureNote = require('../models/SecureNote');
 const Contact = require('../models/Contact');
+const { authenticateToken } = require('../middleware/auth');
 
-// Middleware to check if user is authenticated
-const requireAuth = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  next();
-};
+const requireAuth = authenticateToken;
 
 // Get all teams for the current user
 router.get('/', requireAuth, async (req, res) => {
@@ -426,4 +421,4 @@ router.delete('/:teamId/shared-items/:itemId', requireAuth, async (req, res) => 
   }
 });
 
-module.exports = router; 
+module.exports = router;

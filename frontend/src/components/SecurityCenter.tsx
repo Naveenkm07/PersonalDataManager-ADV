@@ -60,6 +60,10 @@ interface SecurityScore {
 }
 
 const SecurityCenter: React.FC = () => {
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaSecret, setMfaSecret] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaBusy, setMfaBusy] = useState(false);
   const [securityScore, setSecurityScore] = useState<SecurityScore>({
     overall: 0,
     passwordStrength: 0,
@@ -76,8 +80,19 @@ const SecurityCenter: React.FC = () => {
   const { showNotification } = useNotification();
 
   useEffect(() => {
-    analyzeSecurity();
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/security/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(response => response.ok ? response.json() : null)
+        .then(status => { if (status) setMfaEnabled(Boolean(status.mfaEnabled)); })
+        .catch(() => undefined);
+    }
   }, []);
+
+  useEffect(() => {
+    analyzeSecurity();
+  }, [mfaEnabled]);
 
   const analyzeSecurity = () => {
     try {
@@ -104,7 +119,7 @@ const SecurityCenter: React.FC = () => {
       const backupStatus = localStorage.getItem('lastBackup') ? 100 : 0;
 
       // Calculate 2FA status
-      const twoFactorStatus = localStorage.getItem('2faSecret') ? 100 : 0;
+      const twoFactorStatus = mfaEnabled ? 100 : 0;
 
       // Calculate connection security
       const connectionSecurity = window.location.protocol === 'https:' ? 100 : 50;
@@ -169,7 +184,7 @@ const SecurityCenter: React.FC = () => {
       }
 
       // No 2FA
-      if (!localStorage.getItem('2faSecret')) {
+      if (!mfaEnabled) {
         issues.push({
           id: 'no_2fa',
           type: 'no_2fa',
@@ -245,11 +260,78 @@ const SecurityCenter: React.FC = () => {
     analyzeSecurity();
   };
 
+  const startMfaSetup = async () => {
+    setMfaBusy(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/security/mfa/setup`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'MFA setup failed');
+      setMfaSecret(data.secret);
+      showNotification('Add the key to an authenticator app, then enter its current code.', 'info');
+    } catch (error) {
+      showNotification(error instanceof Error ? error.message : 'MFA setup failed', 'error');
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
+  const confirmMfaSetup = async () => {
+    setMfaBusy(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/security/mfa/enable`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: mfaCode }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'MFA verification failed');
+      setMfaEnabled(true);
+      setMfaSecret('');
+      setMfaCode('');
+      analyzeSecurity();
+      showNotification('Authenticator app MFA is enabled.', 'success');
+    } catch (error) {
+      showNotification(error instanceof Error ? error.message : 'MFA verification failed', 'error');
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
         Security Center
       </Typography>
+
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>Authenticator app MFA</Typography>
+          <Alert severity={mfaEnabled ? 'success' : 'warning'} sx={{ mb: 2 }}>
+            {mfaEnabled ? 'MFA is enabled. Sign-ins require your authenticator code.' : 'MFA is not enabled for this account.'}
+          </Alert>
+          {!mfaEnabled && !mfaSecret && (
+            <Button variant="contained" onClick={startMfaSetup} disabled={mfaBusy}>Set up authenticator app</Button>
+          )}
+          {mfaSecret && (
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1 }}>Enter this key in your authenticator app:</Typography>
+              <Typography component="code" sx={{ display: 'block', wordBreak: 'break-all', mb: 2 }}>{mfaSecret}</Typography>
+              <TextField
+                label="Six-digit code" value={mfaCode}
+                onChange={event => setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputProps={{ inputMode: 'numeric', maxLength: 6 }} sx={{ mr: 1, mb: 1 }}
+              />
+              <Button variant="contained" onClick={confirmMfaSetup} disabled={mfaBusy || mfaCode.length !== 6}>
+                Verify and enable
+              </Button>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Overall Security Score */}
       <Card sx={{ mb: 3 }}>
@@ -444,4 +526,4 @@ const SecurityCenter: React.FC = () => {
   );
 };
 
-export default SecurityCenter; 
+export default SecurityCenter;

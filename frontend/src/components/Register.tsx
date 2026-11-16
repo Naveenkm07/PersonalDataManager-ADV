@@ -7,7 +7,6 @@ import {
   Button,
   Typography,
   Link,
-  Alert,
   InputAdornment,
   IconButton,
   useTheme,
@@ -37,7 +36,7 @@ const Register: React.FC = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { register } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -54,8 +53,8 @@ const Register: React.FC = () => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
     if (!formData.confirmPassword) {
@@ -77,9 +76,7 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Mock registration - in production this would be a real API call
-      // For demo purposes, we'll just log the user in directly
-      const success = await login(formData.email, formData.password);
+      const success = await register(formData.email, formData.password);
       if (success) {
         showNotification('Registration successful!', 'success');
         navigate('/dashboard');
@@ -326,24 +323,6 @@ const Register: React.FC = () => {
               </Typography>
             </Box>
 
-            {/* Demo Info */}
-            <Alert 
-              severity="info" 
-              sx={{ 
-                mt: 3,
-                fontSize: isMobile ? '0.75rem' : '0.875rem'
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                Demo Registration:
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
-                Use any email and password (min 6 characters)
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
-                The system will create a demo account for you
-              </Typography>
-            </Alert>
           </Box>
         </CardContent>
       </Paper>
@@ -351,4 +330,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register; 
+export default Register;

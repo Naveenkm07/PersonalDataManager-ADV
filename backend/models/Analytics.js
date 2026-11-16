@@ -4,7 +4,8 @@ const analyticsSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false,
+    default: undefined
   },
   type: {
     type: String,
@@ -147,4 +148,4 @@ analyticsSchema.statics.getSystemMetrics = function(days = 7) {
 
 const Analytics = mongoose.model('Analytics', analyticsSchema);
 
-module.exports = Analytics; 
+module.exports = Analytics;

@@ -5,7 +5,7 @@
 ![GitHub license](https://img.shields.io/github/license/Naveenkm07/PersonalDataManager-ADV)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Naveenkm07/PersonalDataManager-ADV)
 
-A modern, advanced personal data management system for securely storing, organizing, and managing passwords, secure notes, contacts, and team data. Built with React, Node.js, and Java Spring Boot for robust security and seamless user experience.
+A personal data management project with a React/TypeScript client, an Express API backed by MongoDB, and legacy Spring Boot source. The API includes JWT authentication, authenticator-app MFA, and a restricted admin role for security audit events.
 
 ---
 
@@ -30,8 +30,26 @@ A modern, advanced personal data management system for securely storing, organiz
 
 ## 🛠️ Tech Stack
 - **Frontend:** React, TypeScript, Material-UI
-- **Backend:** Node.js/Express & Java Spring Boot
-- **Database:** (configure as needed)
+- **Backend:** Node.js/Express (the repository also contains legacy Spring Boot source)
+- **Database:** MongoDB through Mongoose
+- **Authentication:** bcrypt password hashing, HS256 JWTs, TOTP MFA
+- **Authorization:** user/admin role checks; admin role is assigned by server-side email allow-list
+
+## Security Setup
+
+The API fails closed when `JWT_SECRET` is missing or shorter than 32 characters. MFA setup also requires a separate `MFA_ENCRYPTION_KEY` of at least 32 characters. Generate random values and keep them in the deployment environment; never commit them.
+
+Copy `backend/env.example` to `backend/.env`, configure `MONGO_URI`, `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, and `FRONTEND_URL`. New accounts always receive the `user` role. An operator can grant admin access to verified account IDs through `SECURITY_ADMIN_USER_IDS` or trusted database provisioning; the registration form cannot assign roles. MFA is opt-in per account and can be enabled from Security Center; an authenticator code is then required at login.
+
+Run the focused security checks with:
+
+```sh
+cd backend
+npm ci
+npm run test:security
+```
+
+This repository does not currently implement OAuth 2.0, a Python/MySQL backend, or verified usage by 500+ users. Do not claim those items on a resume unless you add and verify them separately. The credential-management UI also still contains local/mock data paths, so the project should be described as a prototype rather than a production password vault.
 
 ---
 
@@ -96,8 +114,8 @@ A modern, advanced personal data management system for securely storing, organiz
 
 ## ❓ FAQ
 
-**Q: Is my data encrypted?**
-> Yes, all sensitive data is encrypted both in transit and at rest.
+**Q: Does this project provide end-to-end encrypted vault storage?**
+> No. MFA secrets are encrypted in the API database, and account passwords are hashed. The broader credential and note storage paths have not yet been audited or completed for production-grade encryption.
 
 **Q: Can I use this on mobile?**
 > Yes, the UI is fully responsive and works on all modern devices.
@@ -122,4 +140,4 @@ A modern, advanced personal data management system for securely storing, organiz
 
 ---
 
-> **PersonalDataManager-ADV** – Your advanced, secure digital life manager.
+> **PersonalDataManager-ADV** – A personal data management prototype with API authentication and MFA.

@@ -2,27 +2,9 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Contact = require('../models/Contact');
 const Analytics = require('../models/Analytics');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
-
-// Middleware to validate JWT token
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: 'Access token required' });
-  }
-
-  const jwt = require('jsonwebtoken');
-  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: 'Invalid or expired token' });
-    }
-    req.user = user;
-    next();
-  });
-};
 
 // Get all contacts for user
 router.get('/', authenticateToken, async (req, res) => {
@@ -101,4 +83,4 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

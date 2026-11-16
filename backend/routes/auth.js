@@ -1,29 +1,19 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Analytics = require('../models/Analytics');
+const { issueToken } = require('../middleware/auth');
+const { decryptSecret, verifyCode } = require('../security/totp');
 
 const router = express.Router();
 
-// Middleware to validate JWT token
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+const { authenticateToken } = require('../middleware/auth');
 
-  if (!token) {
-    return res.status(401).json({ message: 'Access token required' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: 'Invalid or expired token' });
-    }
-    req.user = user;
-    next();
-  });
-};
+function isConfiguredAdmin(userId) {
+  const adminIds = (process.env.SECURITY_ADMIN_USER_IDS || '')
+    .split(',').map(value => value.trim()).filter(Boolean);
+  return adminIds.includes(userId.toString());
+}
 
 // Register endpoint
 router.post('/register', [
@@ -47,17 +37,14 @@ router.post('/register', [
 
     // Create new user
     const user = await User.create({
+      name: username,
       email,
       password,
-      username
+      role: 'user'
     });
 
     // Generate token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
+    const token = issueToken(user);
 
     // Log analytics
     await Analytics.create({
@@ -76,7 +63,7 @@ router.post('/register', [
       user: {
         id: user._id,
         email: user.email,
-        username: user.username
+        username: user.name
       }
     });
   } catch (error) {
@@ -99,7 +86,7 @@ router.post('/login', [
     const { email, password } = req.body;
 
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+role +mfaSecret');
     if (!user) {
       await Analytics.create({
         userId: null,
@@ -130,12 +117,35 @@ router.post('/login', [
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Upgrade passwords stored in plaintext by older versions after a successful check.
+    if (!/^\$2[aby]\$/.test(user.password)) {
+      user.password = password;
+      await user.save();
+    }
+
+    if (user.mfaEnabled && !req.body.otp) {
+      return res.status(200).json({ mfaRequired: true });
+    }
+    if (user.mfaEnabled) {
+      let secret;
+      try {
+        secret = decryptSecret(user.mfaSecret);
+      } catch (error) {
+        console.error('MFA secret could not be decrypted');
+        return res.status(503).json({ message: 'MFA is temporarily unavailable' });
+      }
+      if (!verifyCode(secret, req.body.otp)) {
+        await Analytics.create({
+          userId: user._id, type: 'login', action: 'failed_login', entity: 'user', success: false,
+          ipAddress: req.ip, userAgent: req.get('User-Agent'), errorMessage: 'Invalid MFA code'
+        });
+        return res.status(401).json({ message: 'Invalid credentials or verification code' });
+      }
+    }
+
     // Generate token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
-    );
+    user.role = user.role === 'admin' || isConfiguredAdmin(user._id) ? 'admin' : 'user';
+    const token = issueToken(user);
 
     // Log analytics
     await Analytics.create({
@@ -154,7 +164,9 @@ router.post('/login', [
       user: {
         id: user._id,
         email: user.email,
-        username: user.username
+        username: user.name,
+        role: user.role,
+        mfaEnabled: user.mfaEnabled
       }
     });
   } catch (error) {
@@ -166,10 +178,11 @@ router.post('/login', [
 // Get current user
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findById(req.user.userId).select('+role -password -mfaSecret -pendingMfaSecret');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    user.role = req.user.role || user.role || 'user';
     res.json(user);
   } catch (error) {
     console.error('Get user error:', error);
@@ -194,7 +207,7 @@ router.put('/profile', authenticateToken, [
     }
 
     // Update fields
-    if (req.body.username) user.username = req.body.username;
+    if (req.body.username) user.name = req.body.username;
     if (req.body.email) user.email = req.body.email;
 
     await user.save();
@@ -214,7 +227,7 @@ router.put('/profile', authenticateToken, [
     res.json({
       id: user._id,
       email: user.email,
-      username: user.username
+      username: user.name
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -289,4 +302,4 @@ router.post('/logout', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

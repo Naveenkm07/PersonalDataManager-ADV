@@ -61,31 +61,32 @@ export const mockTasks: Task[] = [
 ];
 
 export const auth = {
-  login: async (email: string, password: string) => {
-    const response = await fetch('http://localhost:5000/api/auth/login', {
+  login: async (email: string, password: string, otp?: string) => {
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, ...(otp ? { otp } : {}) }),
     });
 
     if (!response.ok) {
-      throw new Error('Invalid email or password');
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Invalid email or password');
     }
 
     const data = await response.json();
-    localStorage.setItem('token', data.token);
+    if (data.token) localStorage.setItem('token', data.token);
     return data;
   },
 
   register: async (email: string, password: string) => {
-    const response = await fetch('http://localhost:5000/api/auth/register', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, username: email.split('@')[0].padEnd(3, '_') }),
     });
 
     if (!response.ok) {
@@ -94,7 +95,7 @@ export const auth = {
     }
 
     const data = await response.json();
-    localStorage.setItem('token', data.token);
+    if (data.token) localStorage.setItem('token', data.token);
     return data;
   },
 };
@@ -203,4 +204,4 @@ export const tasks = {
     setItem('tasks', filtered);
     return { success: true };
   },
-}; 
+};

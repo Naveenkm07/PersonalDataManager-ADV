@@ -20,6 +20,10 @@ const teamsRoutes = require('./routes/teams');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || process.env.JWT_SECRET === 'your-secret-key') {
+  throw new Error('Set JWT_SECRET to a random value of at least 32 characters before starting the API.');
+}
+
 // Connect to MongoDB
 connectDB();
 
@@ -78,6 +82,9 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/passwords', passwordRoutes);
 app.use('/api/contacts', contactRoutes);
@@ -107,4 +114,4 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 });
 
-module.exports = app; 
+module.exports = app;
