@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 */node_modules/
+python-api/.venv/
+python-api/.pytest_cache/
+python-api/**/__pycache__/
+python-api/**/*.pyc
+python-api/securevault.db
 
 # Production builds
 build/

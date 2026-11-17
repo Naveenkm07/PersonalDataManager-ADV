@@ -5,7 +5,7 @@
 ![GitHub license](https://img.shields.io/github/license/Naveenkm07/PersonalDataManager-ADV)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Naveenkm07/PersonalDataManager-ADV)
 
-A personal data management project with a React/TypeScript client, an Express API backed by MongoDB, and legacy Spring Boot source. The API includes JWT authentication, authenticator-app MFA, and a restricted admin role for security audit events.
+A personal data management prototype with a React/TypeScript client, a Python/FastAPI API backed by MySQL, an earlier Express/MongoDB API, and legacy Spring Boot source. The Python API provides password authentication, JWT sessions, authenticator-app MFA, Google OAuth 2.0 sign-in, encrypted record payloads, owner-scoped records, and restricted admin audit access.
 
 ---
 
@@ -30,35 +30,38 @@ A personal data management project with a React/TypeScript client, an Express AP
 
 ## 🛠️ Tech Stack
 - **Frontend:** React, TypeScript, Material-UI
-- **Backend:** Node.js/Express (the repository also contains legacy Spring Boot source)
-- **Database:** MongoDB through Mongoose
-- **Authentication:** bcrypt password hashing, HS256 JWTs, TOTP MFA
-- **Authorization:** user/admin role checks; admin role is assigned by server-side email allow-list
+- **Backend:** Python/FastAPI (plus an earlier Node.js/Express API and legacy Spring Boot source)
+- **Database:** MySQL through SQLAlchemy and PyMySQL; SQLite is used for tests
+- **Authentication:** Argon2 password hashing, HS256 JWTs, TOTP MFA, Google OAuth 2.0 authorization code flow with PKCE
+- **Authorization:** owner-scoped record access and user/admin roles; admins are assigned through server-side `SECURITY_ADMIN_USER_IDS`
 
 ## Security Setup
 
-The API fails closed when `JWT_SECRET` is missing or shorter than 32 characters. MFA setup also requires a separate `MFA_ENCRYPTION_KEY` of at least 32 characters. Generate random values and keep them in the deployment environment; never commit them.
+The Python API fails closed in production when `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, `RECORD_ENCRYPTION_KEY`, or `OAUTH_STATE_KEY` is missing or shorter than 32 characters. Generate distinct random values and keep them in the deployment environment; never commit them. The Node API has its own environment variables described in `backend/env.example`.
 
-Copy `backend/env.example` to `backend/.env`, configure `MONGO_URI`, `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, and `FRONTEND_URL`. New accounts always receive the `user` role. An operator can grant admin access to verified account IDs through `SECURITY_ADMIN_USER_IDS` or trusted database provisioning; the registration form cannot assign roles. MFA is opt-in per account and can be enabled from Security Center; an authenticator code is then required at login.
+Copy `python-api/.env.example` to `python-api/.env`, set the four secrets, and configure the database URL and frontend origin. Google sign-in also requires a Google OAuth client ID and secret, with the exact callback URL registered in Google Cloud Console. New accounts always receive the `user` role. Admin access is configured through `SECURITY_ADMIN_USER_IDS`; the registration form cannot assign roles. MFA is opt-in per account and can be enabled from Security Center.
 
-Run the focused security checks with:
+Run the Python API with SQLite for local development and run its focused security checks with:
 
 ```sh
-cd backend
-npm ci
-npm run test:security
+cd python-api
+python -m venv .venv
+# activate the virtual environment, then:
+pip install -r requirements.txt
+uvicorn securevault.main:app --reload --port 8000
+pytest -q
 ```
 
-This repository does not currently implement OAuth 2.0, a Python/MySQL backend, or verified usage by 500+ users. Do not claim those items on a resume unless you add and verify them separately. The credential-management UI also still contains local/mock data paths, so the project should be described as a prototype rather than a production password vault.
+To run the MySQL-backed API with Docker Compose, first create `python-api/.env` from the example, set strong secrets and database passwords, then run `docker compose up --build` from `python-api`. The API creates its tables at startup. The automated OAuth callback test uses mocked Google token and identity verification; a live Google sign-in requires configured credentials and a registered callback URL. The MySQL container workflow and public multi-user deployment have not been independently load-tested. The broader legacy credential-management UI still contains local/mock data paths, so describe this as a prototype rather than a production password vault. No verified 500+ user count is available.
 
 ---
 
 ## ⚡ Getting Started
 
 ### Prerequisites
-- Node.js (v16+ recommended)
-- npm
-- Java (for Spring Boot backend)
+- Python 3.11 or newer
+- Node.js and npm (for the frontend)
+- MySQL 8.4 or Docker Compose (optional for local SQLite development)
 - Git
 
 ### Installation
@@ -72,12 +75,12 @@ This repository does not currently implement OAuth 2.0, a Python/MySQL backend, 
    cd frontend
    npm install
    ```
-3. **Install backend dependencies:**
+3. **Install Python API dependencies:**
    ```sh
-   cd ../backend
-   npm install
-   # or for Java backend
-   mvn install
+   cd ../python-api
+   python -m venv .venv
+   # activate .venv, then:
+   pip install -r requirements.txt
    ```
 
 ### Running the App
@@ -86,15 +89,16 @@ This repository does not currently implement OAuth 2.0, a Python/MySQL backend, 
   cd frontend
   npm start
   ```
-- **Node.js Backend:**
+- **Python API:**
   ```sh
-  cd backend
-  npm start
+  cd python-api
+  uvicorn securevault.main:app --reload --port 8000
   ```
-- **Java Backend:**
+- **Earlier Node.js API:**
   ```sh
   cd backend
-  mvn spring-boot:run
+  npm install
+  npm start
   ```
 
 ### Usage
@@ -115,7 +119,7 @@ This repository does not currently implement OAuth 2.0, a Python/MySQL backend, 
 ## ❓ FAQ
 
 **Q: Does this project provide end-to-end encrypted vault storage?**
-> No. MFA secrets are encrypted in the API database, and account passwords are hashed. The broader credential and note storage paths have not yet been audited or completed for production-grade encryption.
+> No. MFA secrets and record payloads are encrypted by the Python API, and account passwords are hashed. The broader legacy UI and deployment have not yet been audited for production use.
 
 **Q: Can I use this on mobile?**
 > Yes, the UI is fully responsive and works on all modern devices.

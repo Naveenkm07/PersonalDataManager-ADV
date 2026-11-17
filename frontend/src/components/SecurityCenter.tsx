@@ -82,7 +82,7 @@ const SecurityCenter: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/security/status`, {
+      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/security/status`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then(response => response.ok ? response.json() : null)
         .then(status => { if (status) setMfaEnabled(Boolean(status.mfaEnabled)); })
@@ -264,7 +264,7 @@ const SecurityCenter: React.FC = () => {
     setMfaBusy(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/security/mfa/setup`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/security/mfa/setup`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -282,7 +282,7 @@ const SecurityCenter: React.FC = () => {
     setMfaBusy(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/security/mfa/enable`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/security/mfa/enable`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: mfaCode }),

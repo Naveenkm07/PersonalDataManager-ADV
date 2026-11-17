@@ -15,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string, otp?: string) => Promise<boolean>;
   register: (email: string, password: string) => Promise<boolean>;
+  loginWithOAuth: (session: any) => boolean;
   logout: () => void;
 }
 
@@ -38,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
         if (storedUser && token && token.split('.').length === 3) {
-          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/me`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (!response.ok) throw new Error('Stored session is no longer valid');
@@ -96,6 +97,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithOAuth = (session: any): boolean => {
+    if (!session?.token || !session?.user) return false;
+    const account = {
+      id: session.user.id || session.user._id,
+      username: session.user.username || session.user.name,
+      email: session.user.email,
+      role: session.user.role,
+    };
+    setUser(account);
+    localStorage.setItem('token', session.token);
+    localStorage.setItem('user', JSON.stringify(account));
+    localStorage.setItem('isLoggedIn', 'true');
+    return true;
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
@@ -109,6 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading,
     login,
     register,
+    loginWithOAuth,
     logout,
   };
 

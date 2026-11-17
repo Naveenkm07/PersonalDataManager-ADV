@@ -36,7 +36,7 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, loginWithOAuth } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -106,6 +106,31 @@ const Login: React.FC = () => {
 
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const startGoogleLogin = () => {
+    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    const expectedOrigin = new URL(apiBase).origin;
+    let timeout = 0;
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== expectedOrigin || event.data?.type !== 'securevault-oauth') return;
+      window.removeEventListener('message', handleMessage);
+      window.clearTimeout(timeout);
+      if (loginWithOAuth(event.data.session)) {
+        showNotification('Google sign-in successful!', 'success');
+        navigate('/dashboard');
+      } else {
+        showNotification('Google sign-in did not return a valid session.', 'error');
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    timeout = window.setTimeout(() => window.removeEventListener('message', handleMessage), 5 * 60 * 1000);
+    const popup = window.open(`${apiBase}/api/auth/oauth/google/authorize`, 'securevault-google-oauth', 'popup,width=520,height=640');
+    if (!popup) {
+      window.removeEventListener('message', handleMessage);
+      window.clearTimeout(timeout);
+      showNotification('Allow pop-ups to continue with Google.', 'error');
+    }
   };
 
   return (
@@ -248,6 +273,16 @@ const Login: React.FC = () => {
                 mb: 3
               }}
             />
+
+            <Button
+              type="button"
+              fullWidth
+              variant="outlined"
+              onClick={startGoogleLogin}
+              sx={{ mt: 1, py: 1.5, textTransform: 'none' }}
+            >
+              Continue with Google
+            </Button>
 
             <Button
               type="submit"

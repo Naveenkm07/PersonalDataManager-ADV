@@ -1,0 +1,29 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: securevault
+      MYSQL_USER: securevault
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-this}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-this-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - securevault-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-change-this-root}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql+pymysql://securevault:${MYSQL_PASSWORD:-change-this}@mysql:3306/securevault?charset=utf8mb4
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+volumes:
+  securevault-mysql:
